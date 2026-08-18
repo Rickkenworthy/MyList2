@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <title>My Checklist</title>
+
+  <!-- Tailwind (browser build) -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reserve space for Lucide icons → no CLS */
+    img.icon { width: 1.25rem; height: 1.25rem; }
+  </style>
+
+  <!-- Auto‑add dark class if OS prefers dark -->
+  <script>
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+</head>
+
+<body class="h-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="p-4 bg-white dark:bg-gray-800 shadow-sm flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-lg md:text-base">My Checklist</h1>
+    <button id="addBtn" class="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+      <img src="https://unpkg.com/lucide-static@latest/icons/plus.svg" alt="Add" class="icon">
+      <span class="text-base md:text-sm">Add Item</span>
+    </button>
+  </header>
+
+  <!-- Main list -->
+  <main class="max-w-2xl mx-auto p-4">
+    <ul id="checklist" class="space-y-2"></ul>
+  </main>
+
+  <!-- Add‑item modal -->
+  <div id="modal" class="fixed inset-0 bg-black/30 flex items-center justify-center hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 w-80">
+      <h2 class="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">New Checklist Item</h2>
+      <input id="newItemText" type="text" placeholder="Item description"
+             class="w-full p-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+      <div class="flex justify-end space-x-2">
+        <button id="cancelBtn" class="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
+        <button id="saveBtn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Local storage ----------
+    const STORAGE_KEY = 'myChecklistState';
+    const loadState = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    const saveState = (s) => localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+
+    // ---------- Default tasks (your list) ----------
+    const DEFAULT_TASKS = [
+      {text:'Proceeds from JAG Sale to NW',checked:false},
+      {text:'Proceeds from MINI Sale to NW',checked:false},
+      {text:'Proceeds from House Sale to NW',checked:false},
+      {text:'Move Reward Saver to Flex',checked:false},
+      {text:'Transfer both to Anz',checked:false},
+      {text:'Transfer RBS to NW',checked:false},
+      {text:'Cancel M&S Card',checked:false},
+      {text:'Sell mini to Nathan',checked:false},
+      {text:'Check monies paid in NW',checked:false},
+      {text:'laim Mini Ins back',checked:false},
+      {text:'Cancel Gym',checked:false},
+      {text:'Inform Broadband',checked:false},
+      {text:'Inform Sky',checked:false},
+      {text:'Switch Mobiles',checked:false},
+      {text:'Inform Gas/Elec',checked:false},
+      {text:'inform Water',checked:false},
+      {text:'Inform Council Tax',checked:false},
+      {text:'Inform House Ins',checked:false},
+      {text:'Order Skip',checked:false},
+      {text:'Inform Tax Office',checked:false},
+      {text:'Inform StatePension',checked:false},
+      {text:'Inform Fire Pension',checked:false},
+      {text:'Inform JK Pension',checked:false},
+      {text:'Book travel insurance',checked:false},
+      {text:'Book flights',checked:false},
+      {text:'Renew Aus Visa',checked:false}
+    ];
+
+    // ---------- Render ----------
+    function render(state) {
+      const ul = document.getElementById('checklist');
+      ul.innerHTML = '';
+      state.forEach((item,i) => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center space-x-3 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm';
+        li.innerHTML = `
+          <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400 rounded"
+                 data-index="${i}" ${item.checked?'checked':''}>
+          <span class="flex-1 ${item.checked?'line-through':''} text-base md:text-sm text-gray-900 dark:text-gray-100">
+            ${item.text}
+          </span>
+          <button data-index="${i}" class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
+            <img src="https://unpkg.com/lucide-static@latest/icons/trash-2.svg" alt="Delete" class="icon">
+          </button>
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    // ---------- Init ----------
+    let state = loadState();
+    if (!state) {
+      state = DEFAULT_TASKS;
+      saveState(state);
+    }
+    render(state);
+
+    // ---------- UI events ----------
+    document.getElementById('addBtn').addEventListener('click', () => {
+      document.getElementById('modal').classList.remove('hidden');
+    });
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      document.getElementById('modal').classList.add('hidden');
+      document.getElementById('newItemText').value = '';
+    });
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const txt = document.getElementById('newItemText').value.trim();
+      if (!txt) return;
+      state.push({text:txt,checked:false});
+      saveState(state);
+      render(state);
+      document.getElementById('modal').classList.add('hidden');
+      document.getElementById('newItemText').value = '';
+    });
+
+    // Clicks on checkboxes or delete buttons
+    document.getElementById('checklist').addEventListener('click', e => {
+      const tgt = e.target.closest('input[type="checkbox"], button');
+      if (!tgt) return;
+      const idx = Number(tgt.dataset.index);
+      if (tgt.type === 'checkbox') {
+        state[idx].checked = tgt.checked;
+      } else {
+        state.splice(idx,1);
+      }
+      saveState(state);
+      render(state);
+    });
+  </script>
+</body>
+</html>“How good is my List :-) ”
